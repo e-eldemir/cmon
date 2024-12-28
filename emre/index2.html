@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        #wrapper {
+            position: relative;
+        }
+
+        .overlay {
+            border: solid 4px red;
+            width: 640px;
+            height: 360px;
+            /* background: grey; */
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+    </style>
+
+</head>
+
+<body style="background-color: aquamarine;">
+
+
+    <div id="wrapper">
+
+        <div id="player" class="setPlayers" style="z-index: 10">u1zgFlCw8Aw</div>
+
+
+        <div class="overlay" id="overlay">
+            <canvas id="myCanvas" width="640" height="360"></canvas>
+        </div>
+
+    </div>
+
+
+
+    <script>
+        var canvas = document.getElementById("myCanvas");
+
+        var ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(95, 50, 40, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        // ctx.globalAlpha = 0.1;
+
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: 'PYep9pXjK_Q', // Video ID'sini buraya girin
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            event.target.playVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            // Video oynarken
+            if (event.data == YT.PlayerState.PLAYING) {
+
+            }
+        }
+
+
+
+
+        var overlay = document.getElementById("overlay");
+        var timer; // Hareketsizlik zamanlayıcısı
+
+        // Mouse hareketini dinle
+        document.addEventListener('mousemove', function () {
+            // Eğer canvas görünürse, gizle ve zamanlayıcıyı sıfırla
+            if (overlay.style.left === '0px') {
+                overlay.style.left = '-2000px';
+                clearTimeout(timer);
+            }
+
+            // Mouse hareket ettiğinde, 5 saniye sonra canvas'i göster
+            timer = setTimeout(function () {
+                overlay.style.left = '0px';
+            }, 3000); // 5 saniye
+        });
+        document.addEventListener('click', function () {
+            // Eğer canvas görünürse, gizle ve zamanlayıcıyı sıfırla
+            if (overlay.style.left === '0px') {
+                overlay.style.left = '-2000px';
+                clearTimeout(timer);
+            }
+
+            // Mouse hareket ettiğinde, 5 saniye sonra canvas'i göster
+            timer = setTimeout(function () {
+                overlay.style.left = '0px';
+            }, 3000); // 5 saniye
+        });
+
+        // canvas.addEventListener('', function () {
+        //     // Eğer canvas görünürse, gizle ve zamanlayıcıyı sıfırla
+        //     overlay.style.left = '-2000px';
+        // }, false);
+
+    </script>
+</body>
+
+</html>

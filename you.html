@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/stats.js/r11/Stats.min.js"></script>
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+        }
+        
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+        body::-webkit-scrollbar {
+            width: .5em;
+        }
+        
+        body::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        body::-webkit-scrollbar-thumb {
+            background-color: darkgrey;
+            outline: 1px solid slategrey;
+        }
+        
+        .ytp-pause-overlay {
+            display: none;
+        }
+        
+        .ytp-expand-pause-overlay .ytp-pause-overlay {
+            display: none !important;
+        }
+        
+        .video,
+        .debug {
+            padding: 0 0px;
+        }
+        
+        table.summary {
+            border: 1px solid #333;
+            border-collapse: collapse;
+        }
+        
+        table.summary td,
+        table.summary th {
+            border: 1px solid #333;
+            padding: 5px 8px;
+        }
+        
+        #video-container {
+            width: 320px;
+            height: 240px;
+            position: relative;
+        }
+        
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #pose-video {
+            transform: scaleX(-1);
+        }
+        
+        #pose-result {
+            font-size: 100px;
+            text-align: right;
+            padding: 20px 30px 0 0;
+        }
+        
+        table {
+            font-size: .8rem !important;
+        }
+        
+        .overlay {
+            /* margin-top: 40px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+    right: 0;
+    bottom: 0;
+    background: black;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    filter: blur(4px);
+    -o-filter: blur(4px);
+    -ms-filter: blur(4px);
+    -moz-filter: blur(4px);
+    -webkit-filter: blur(4px); */
+        }
+        
+        .emoji {
+            font-family: 'Noto Emoji', sans-serif;
+        }
+        
+        .centercontent {
+            position: absolute;
+            width: 600px;
+            min-height: 300px;
+            max-width: 100%;
+            /* box-shadow: 0px 0px 10px #cccccc; */
+            border-radius: 10px;
+            z-index: 1000;
+            /* height: auto; */
+            top: 50%;
+            left: 50%;
+            border: 1px solid #dedede;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- stats (start)-->
+    <div id="Stats-output"></div>
+    <!-- stats (end)-->
+
+
+    <!-- youtube player (start) -->
+    <!-- <div id="player"></div> -->
+    <!-- youtube player (end) -->
+
+
+    <div class="video-container overlay" id="overlay">
+        <div id="player"></div>
+    </div>
+
+
+    <div id="video-container">
+        <video id="pose-video" class="layer" playsinline></video>
+        <canvas id="pose-canvas" class="layer"></canvas>
+        <div id="pose-result" class="layer"></div>
+    </div>
+
+    <script src="https://unpkg.com/@tensorflow/tfjs-core@3.7.0/dist/tf-core.js"></script>
+    <script src="https://unpkg.com/@tensorflow/tfjs-converter@3.7.0/dist/tf-converter.js"></script>
+    <script src="https://unpkg.com/@tensorflow/tfjs-backend-webgl@3.7.0/dist/tf-backend-webgl.js"></script>
+    <script src="https://unpkg.com/@tensorflow-models/handpose@0.0.7/dist/handpose.js"></script>
+    <script src="fingerpose.js" type="text/javascript"></script>
+
+
+
+    <script>
+        var tag = document.createElement('script');
+
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // 3. This function creates an <iframe> (and YouTube player)
+        //    after the API code downloads.
+        var player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '390',
+                width: '640',
+                videoId: 'M7lc1UVf-VE',
+                playerVars: {
+                    'playsinline': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // 4. The API will call this function when the video player is ready.
+        function onPlayerReady(event) {
+            // event.target.playVideo();
+        }
+
+        // 5. The API calls this function when the player's state changes.
+        //    The function indicates that when playing a video (state=1),
+        //    the player should play for six seconds and then stop.
+        var done = false;
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING && !done) {
+                // setTimeout(stopVideo, 6000);
+                // done = true;
+            }
+        }
+
+
+
+
+        $(function() {
+
+            var stats = initStats();
+
+            function animate() {
+                stats.begin();
+
+                stats.end();
+                requestAnimationFrame(animate);
+
+            }
+
+            requestAnimationFrame(animate);
+
+
+            function initStats() {
+                var stats = new Stats();
+                stats.setMode(0); // 0: fps, 1: ms
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.right = '0px';
+                stats.domElement.style.top = '0px';
+                $("#Stats-output").append(stats.domElement);
+                return stats;
+            }
+
+        });
+
+
+        const overlayArea = document.querySelector("#overlay");
+        const config = {
+            video: {
+                width: 640,
+                height: 480,
+                fps: 32
+            }
+        };
+        const landmarkColors = {
+            thumb: 'red',
+            indexFinger: 'blue',
+            middleFinger: 'yellow',
+            ringFinger: 'green',
+            pinky: 'pink',
+            palmBase: 'white'
+        };
+        const gestureStrings = {
+            'thumbs_up': '👍', // rewind
+            'victory': '✌', // play
+            'raised': '✋' // stop
+
+        };
+        let waitXsecond = false;
+        let waitDuration = 3000;
+        var lastCommand = '';
+
+        // document.getElementById("btn-master-stop").addEventListener("click", stopTracking);
+        const allEqual = arr => arr.every(v => v === arr[0]);
+        var _jsArray = [];
+        const maxArrayElement = 7;
+
+        function callVideo(result) {
+
+            _jsArray.push(result);
+            // console.log(_jsArray);
+            if (_jsArray.length >= maxArrayElement) {
+                _jsArray.shift();
+            } else {
+                return;
+            }
+            //  console.log(_jsArray);
+            // let emre = allEqual([1, 1, 1, 1]);
+            if (allEqual(_jsArray) === true) {
+                // butun array uyeleri ayni... demekki ayni isaretteyiz..
+                if (waitXsecond == false) {
+                    console.log('butun uyeler ayni');
+                    _jsArray = [];
+                    waitXsecond = true;
+                    if (result == 'thumbs_up') {
+                        console.log('call rewind');
+                        // showHand("👍");
+                        // rewind();
+                    } else if (result == 'victory') {
+                        console.log('call play');
+                        // showHand("✌");
+                        // playVideo();
+                    } else if (result == 'raised') {
+                        showHand("✋");
+                        console.log('call stop');
+                        // pauseVideo();
+                    }
+
+                    lastCommand = result;
+
+                    setTimeout(function() {
+                        console.log("I'm ready new order ;) ");
+                        waitXsecond = false;
+                    }, waitDuration);
+
+
+                } else {
+                    return;
+                }
+            } else {
+                console.log('butun uyeler farkli');
+                return;
+            }
+            // waitXsecond = true;
+            // setTimeout(function() {
+            //     // function code goes here
+            //     waitXsecond = false;
+            // }, waitDuration);
+        }
+
+        function showHand(str) {
+            resultLayer.innerText = str;
+            setTimeout(function() {
+                resultLayer.innerText = '';
+            }, 2000);
+        }
+
+
+        function mylogger(message) {
+            // logger.innerHTML = message;
+            setTimeout(
+                function() {
+                    // logger.innerHTML = '';
+                }, 1500);
+        }
+
+        // const buttonText = document.querySelector("#updatenote");
+        const resultLayer = document.querySelector("#pose-result");
+        async function main() {
+            const video = document.querySelector("#pose-video");
+            const canvas = document.querySelector("#pose-canvas");
+            const ctx = canvas.getContext("2d");
+            // configure gesture estimator
+            // add "✌🏻" and "👍" as sample gestures
+            const knownGestures = [
+                fp.Gestures.VictoryGesture,
+                fp.Gestures.ThumbsUpGesture,
+                fp.Gestures.RaisedGesture
+            ];
+            const GE = new fp.GestureEstimator(knownGestures);
+            // load handpose model
+            const model = await handpose.load();
+            console.log("Handpose model loaded");
+            mylogger('Handpose model loaded');
+            // main estimation loop
+            const estimateHands = async() => {
+                // clear canvas overlay
+                ctx.clearRect(0, 0, config.video.width, config.video.height);
+                //    resultLayer.innerText = '';
+                // get hand landmarks from video
+                // Note: Handpose currently only detects one hand at a time
+                // Therefore the maximum number of predictions is 1
+                const predictions = await model.estimateHands(video, true);
+                for (let i = 0; i < predictions.length; i++) {
+                    // draw colored dots at each predicted joint position
+                    for (let part in predictions[i].annotations) {
+                        for (let point of predictions[i].annotations[part]) {
+                            drawPoint(ctx, point[0], point[1], 6, landmarkColors[part]);
+                        }
+                    }
+                    // estimate gestures based on landmarks
+                    // using a minimum score of 9 (out of 10)
+                    // gesture candidates with lower score will not be returned
+                    const est = GE.estimate(predictions[i].landmarks, 1);
+                    if (est.gestures.length > 0) {
+                        // find gesture with highest match score
+                        let result = est.gestures.reduce((p, c) => {
+                            return (p.score > c.score) ? p : c;
+                        });
+                        // resultLayer.innerText = gestureStrings[result.name];
+                        callVideo(result.name);
+                    }
+                    // update debug info
+                    // updateDebugInfo(est.poseData);
+                }
+                // ...and so on
+                setTimeout(() => {
+                    // if (waitXsecond == false) {
+                    estimateHands();
+                    // }
+                }, 1000 / config.video.fps);
+            };
+            estimateHands();
+            mylogger('Ready');
+
+
+            console.log("Starting predictions");
+            overlayArea.classList.remove("overlay");
+            // Youtube player ekrana ekleniyor..!
+
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            // msgArea.style.display = "none";
+
+
+
+            // buttonText.classList.remove("btn-danger");
+            // buttonText.classList.add("btn-success");
+            // playVideo();
+        }
+        async function initCamera(width, height, fps) {
+            const constraints = {
+                audio: false,
+                video: {
+                    facingMode: "user",
+                    width: width,
+                    height: height,
+                    frameRate: {
+                        max: fps
+                    }
+                }
+            };
+            const video = document.querySelector("#pose-video");
+            video.width = width;
+            video.height = height;
+
+            // get devices list
+            // const devices = await navigator.mediaDevices.enumerateDevices();
+            // console.log(devices);
+
+            // get video stream
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            return new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    resolve(video)
+                };
+            });
+        }
+
+        function drawPoint(ctx, x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        // production'da silinecek..!
+        /*function updateDebugInfo(data) {
+            for (let fingerIdx in data) {
+                document.getElementById("curl-" + fingerIdx).innerText = data[fingerIdx][1];
+                document.getElementById("dir-" + fingerIdx).innerText = data[fingerIdx][2];
+            }
+        }*/
+        window.addEventListener("DOMContentLoaded", () => {
+            var loadedmetadata = false;
+            if (window.addEventListener) {
+                window.addEventListener('loadedmetadata', function(ev) {
+                    loadedmetadata = true;
+                }, true);
+            }
+            if (loadedmetadata === true && videoPlayer.techName === 'html5') {
+                // call the callback you would have attached to
+                // the event listener.
+            } else {
+                // add event listener here
+            }
+            initCamera(
+                config.video.width, config.video.height, config.video.fps
+            ).then(video => {
+                video.play();
+                video.addEventListener("loadeddata", event => {
+                    console.log("Camera is ready");
+                    mylogger('Camera is ready');
+                    main();
+                });
+            }).catch((error) => {
+                console.error(`onRejected function called: ${error.message}`);
+            })
+            const canvas = document.querySelector("#pose-canvas");
+            canvas.width = config.video.width;
+            canvas.height = config.video.height;
+            console.log("Canvas initialized");
+            mylogger('Canvas initialized');
+
+
+        });
+    </script>
+</body>
+
+</html>

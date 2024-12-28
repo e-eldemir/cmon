@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Player API</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <style>
+    #wrapper {
+      position: relative;
+    }
+
+    .overlay {
+      border: solid 1px red;
+      width: 640px;
+      height: 360px;
+      /* background: grey; */
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="wrapper">
+
+    <div id="player" style="z-index: 10"></div>
+
+
+    <div class="overlay">
+    </div>
+    <div id="myCanvas"></div>
+
+  </div>
+
+
+
+  <script>
+    // YouTube Player API'nin hazır olduğundan emin ol
+
+
+    // var canvas = document.getElementById('myCanvas');
+    // var context = canvas.getContext('2d');
+    // var centerX = canvas.width / 2;
+    // var centerY = canvas.height / 2;
+
+    // context.font = '30px Arial';
+    // context.fillStyle = 'black';
+    // var text = 'Emre';
+    // var textWidth = context.measureText(text).width;
+    // context.fillText(text, centerX - textWidth / 2, centerY);
+    // // Canvas'in arkasını saydam yap
+    // context.globalAlpha = 0.5;
+
+
+    var c = document.getElementById("myCanvas");
+    var ctx = c.getContext("2d");
+    ctx.beginPath();
+    ctx.arc(95, 50, 40, 0, 2 * Math.PI);
+    ctx.stroke();
+  </script>
+</body>
+
+</html>

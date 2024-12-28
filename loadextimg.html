@@ -1,0 +1,33 @@
+<canvas id="canvas1" width="400" height="400"></canvas>
+<script>
+    const canvas = document.getElementById("canvas1");
+    const ctx = canvas.getContext("2d");
+    const image = new Image();
+    image.src = "http://upload.wikimedia.org/wikipedia/commons/d/d2/Svg_example_square.svg";
+    // Dış PNG dosyasının yolunu belirtin 
+    let scaleFactor = 1.0;
+    image.onload = function() {
+        drawImage();
+    };
+    canvas.addEventListener("mousemove", handleMouseOver);
+    canvas.addEventListener("mouseout", handleMouseOut);
+
+    function drawImage() {
+        ctx.clearRect(0,
+            0, canvas.width, canvas.height);
+        ctx.drawImage(image, 100 * scaleFactor / 2, 100 * scaleFactor / 2, image.width * scaleFactor, image.height * scaleFactor);
+    }
+
+    function handleMouseOver(event) {
+        scaFleFactor = 0.95; // %5 oranında küçült 
+        drawImage();
+    }
+
+    function
+    handleMouseOut(event) {
+        scaleFactor = 1.0; // Orjinal boyuta geri dön 
+        drawImage();
+    }
+</script>
+
+ikonlarin adresler : https://www.freepik.com/icon/stop_786479#fromView=search&term=stop+button&track=ais&page=1&position=56&uuid=578e9e9a-84b8-4739-b461-aa848b4cf02d https://www.freepik.com/icon/backward_13984634#fromView=search&term=rewind+button&track=ais&page=7&position=91&uuid=870b8295-c883-4a52-97a1-573315c82edc
